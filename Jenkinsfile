@@ -8,6 +8,9 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
         IMAGE_NAME = "debbabiahlem/mon-app"
+        POSTGRES_USER = 'postgres'
+        POSTGRES_PASSWORD = 'postgres'
+        POSTGRES_DB = 'monapp_test'
     }
 
     stages {
@@ -25,12 +28,24 @@ pipeline {
 
         stage('Test') {
             steps {
-                sh 'docker stop postgres-test || true'
-                sh 'docker rm postgres-test || true'
-                sh 'docker run --rm --name postgres-test -d -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=monapp_test -p 5432:5432 postgres:16'
-                sh 'for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do docker exec postgres-test pg_isready -U postgres > /dev/null 2>&1 && break; sleep 1; done'
-                sh 'sleep 2'
-                sh 'mvn test -Dspring.datasource.url=jdbc:postgresql://localhost:5432/monapp_test -Dspring.datasource.username=postgres -Dspring.datasource.password=postgres -Dspring.jpa.hibernate.ddl-auto=create-drop'
+                script {
+                    sh '''
+                        docker run --rm --name postgres-test -d \
+                            -e POSTGRES_USER=${POSTGRES_USER} \
+                            -e POSTGRES_PASSWORD=${POSTGRES_PASSWORD} \
+                            -e POSTGRES_DB=${POSTGRES_DB} \
+                            -p 5432:5432 \
+                            postgres:16
+                        sleep 8
+                    '''
+                }
+                sh '''
+                    mvn test \
+                        -Dspring.datasource.url=jdbc:postgresql://localhost:5432/monapp_test \
+                        -Dspring.datasource.username=postgres \
+                        -Dspring.datasource.password=postgres \
+                        -Dspring.jpa.hibernate.ddl-auto=create-drop
+                '''
             }
             post {
                 always {
@@ -56,8 +71,10 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'docker stop mon-app || true'
-                sh 'docker rm mon-app || true'
+                sh '''
+                    docker stop mon-app || true
+                    docker rm mon-app || true
+                '''
                 sh "docker run -d --name mon-app -p 8082:8080 ${IMAGE_NAME}:${BUILD_NUMBER}"
             }
         }
@@ -65,10 +82,10 @@ pipeline {
 
     post {
         success {
-            echo "Build reussi pour mon-app"
+            echo "Build #${BUILD_NUMBER} reussi pour mon-app"
         }
         failure {
-            echo "Build echoue pour mon-app"
+            echo "Build #${BUILD_NUMBER} echoue pour mon-app"
         }
         always {
             cleanWs()
