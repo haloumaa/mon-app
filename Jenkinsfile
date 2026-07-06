@@ -72,7 +72,11 @@ pipeline {
                 sh "docker push ${IMAGE_NAME}:latest"
             }
         }
+
         stage('Deploy') {
+
+      stage('Deploy') {
+
     steps {
         sh 'docker network create prod-net || true'
         sh 'docker stop mon-app || true'
