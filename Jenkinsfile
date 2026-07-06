@@ -9,7 +9,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
         IMAGE_NAME = "debbabiahlem/mon-app"
         POSTGRES_USER = 'postgres'
-        POSTGRES_PASSWORD = 'postgres'
+        POSTGRES_PASSWORD = 'changeme123'
         POSTGRES_DB = 'monapp_test'
     }
     
@@ -87,7 +87,7 @@ pipeline {
                         docker stop mon-app || true &&
                         docker rm mon-app || true &&
                         docker run -d --name mon-app -p 8080:8080 ${IMAGE_NAME}:${BUILD_NUMBER}
-                        '
+                        
                     """
                 }
             }
@@ -99,6 +99,8 @@ pipeline {
             slackSend(color: 'good', message: "Build #${BUILD_NUMBER} réussi pour mon-app")
         }
         failure {
+            slackSend(color: 'danger', message: " Build #${BUILD_NUMBER} échoué pour mon-app")
+            slackSend(color: 'danger', message: " Build #${BUILD_NUMBER} échoué pour mon-app")
             slackSend(color: 'danger', message: " Build #${BUILD_NUMBER} échoué pour mon-app")
         }
         always {
