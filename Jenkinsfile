@@ -72,13 +72,14 @@ pipeline {
                 sh "docker push ${IMAGE_NAME}:latest"
             }
         }
-        stage('Deploy') {
-            steps {
-                sh 'docker stop mon-app || true'
-                sh 'docker rm mon-app || true'
-                sh "docker run -d --name mon-app -p 8082:8080 ${IMAGE_NAME}:${BUILD_NUMBER}"
-            }
-        }
+      stage('Deploy') {
+    steps {
+        sh 'docker network create prod-net || true'
+        sh 'docker stop mon-app || true'
+        sh 'docker rm mon-app || true'
+        sh "docker run -d --name mon-app --network prod-net -p 8082:8080 ${IMAGE_NAME}:${BUILD_NUMBER}"
+    }
+}
     }
     post {
         success {
