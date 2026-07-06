@@ -7,7 +7,7 @@ pipeline {
     
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
-        IMAGE_NAME = "debbabiahlem/mon-app"   
+        IMAGE_NAME = "debbabiahlem/mon-app"
         POSTGRES_USER = 'postgres'
         POSTGRES_PASSWORD = 'postgres'
         POSTGRES_DB = 'monapp_test'
@@ -29,7 +29,7 @@ pipeline {
         stage('Test') {
             steps {
                 script {
-                   
+                    // Nettoyage + Démarrage PostgreSQL
                     sh '''
                         docker stop postgres-test || true
                         docker rm postgres-test || true
