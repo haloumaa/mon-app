@@ -77,11 +77,12 @@ pipeline {
 
       stage('Deploy') {
 
-    steps {
-        sh 'docker network create prod-net || true'
-        sh 'docker stop mon-app || true'
-        sh 'docker rm mon-app || true'
-        sh "docker run -d --name mon-app --network prod-net -p 8082:8080 ${IMAGE_NAME}:${BUILD_NUMBER}"
+   steps {
+        sshagent(['prod-server-ssh']) {
+            sh '''
+                ssh -o StrictHostKeyChecking=no debbabiahlem@host.docker.internal "docker pull debbabiahlem/mon-app:latest && docker stop mon-app || true && docker rm mon-app || true && docker run -d --name mon-app -p 8082:8080 debbabiahlem/mon-app:latest"
+            '''
+        }
     }
 }
     }
