@@ -25,7 +25,6 @@ pipeline {
                 sh "docker network create ${NET_NAME} || true"
                 sh "docker stop ${PG_CONTAINER} || true"
                 sh "docker rm ${PG_CONTAINER} || true"
-
                 sh """
                   docker run --rm --name ${PG_CONTAINER} -d \
                     --network ${NET_NAME} \
@@ -34,9 +33,7 @@ pipeline {
                     -e POSTGRES_DB=monapp_test \
                     postgres:16
                 """
-
                 sh "docker network connect ${NET_NAME} \$(hostname) || true"
-
                 sh """
                   for i in \$(seq 1 30); do
                     docker exec ${PG_CONTAINER} pg_isready -U postgres > /dev/null 2>&1 && break
@@ -44,7 +41,6 @@ pipeline {
                   done
                 """
                 sh 'sleep 2'
-
                 sh """
                   mvn test \
                     -Dspring.datasource.url=jdbc:postgresql://${PG_CONTAINER}:5432/monapp_test \
@@ -72,19 +68,15 @@ pipeline {
                 sh "docker push ${IMAGE_NAME}:latest"
             }
         }
-
         stage('Deploy') {
-
-      stage('Deploy') {
-
-   steps {
-        sshagent(['prod-server-ssh']) {
-            sh '''
-                ssh -o StrictHostKeyChecking=no debbabiahlem@host.docker.internal "docker pull debbabiahlem/mon-app:latest && docker stop mon-app || true && docker rm mon-app || true && docker run -d --name mon-app -p 8082:8080 debbabiahlem/mon-app:latest"
-            '''
+            steps {
+                sshagent(['prod-server-ssh']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no debbabiahlem@host.docker.internal "docker pull debbabiahlem/mon-app:latest && docker stop mon-app || true && docker rm mon-app || true && docker run -d --name mon-app -p 8082:8080 debbabiahlem/mon-app:latest"
+                    '''
+                }
+            }
         }
-    }
-}
     }
     post {
         success {
@@ -97,5 +89,4 @@ pipeline {
             cleanWs()
         }
     }
-}
 }
