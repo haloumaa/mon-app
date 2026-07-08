@@ -75,7 +75,7 @@ pipeline {
                 ssh -o StrictHostKeyChecking=no debbabiahlem@host.docker.internal "docker stop mon-app || true && docker rm -f mon-app || true && sleep 2 && docker run -d --name mon-app --network prod-net -p 8082:8080 ${IMAGE_NAME}:${BUILD_NUMBER}"
             """
         }
-    }
+    
 }
         }
     }
