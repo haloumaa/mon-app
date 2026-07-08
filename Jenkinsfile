@@ -24,14 +24,21 @@ pipeline {
     steps {
         sh "docker stop ${PG_CONTAINER} || true"
         sh "docker rm ${PG_CONTAINER} || true"
+
         sh """
           docker run --rm --name ${PG_CONTAINER} -d \
             -e POSTGRES_USER=postgres \
             -e POSTGRES_PASSWORD=postgres \
             -e POSTGRES_DB=monapp_test \
             -p 5432:5432 \
+            --health-cmd="pg_isready -U postgres" \
+            --health-interval=2s \
+            --health-timeout=3s \
+            --health-retries=20 \
             postgres:16
         """
+
+        // === Attente ici, AVANT mvn test ===
         sh """
           for i in \$(seq 1 60); do
             docker exec ${PG_CONTAINER} psql -U postgres -d monapp_test -c "SELECT 1" > /dev/null 2>&1 && break
@@ -39,7 +46,7 @@ pipeline {
             sleep 1
           done
         """
-        sh 'sleep 3'
+
         sh """
           mvn test \
             -Dspring.datasource.url=jdbc:postgresql://localhost:5432/monapp_test \
