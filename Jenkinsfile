@@ -24,41 +24,40 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                sh "docker stop ${PG_CONTAINER} || true"
-                sh "docker rm ${PG_CONTAINER} || true"
-                sh """
-                  docker run --rm --name ${PG_CONTAINER} -d \
-                    -e POSTGRES_USER=postgres \
-                    -e POSTGRES_PASSWORD=postgres \
-                    -e POSTGRES_DB=monapp_test \
-                    -p 5432:5432 \
-                    postgres:16
-                """
-                sh """
-                  for i in \$(seq 1 60); do
-                    docker exec ${PG_CONTAINER} psql -U postgres -d monapp_test -c "SELECT 1" > /dev/null 2>&1 && break
-                    echo "En attente de PostgreSQL... (\$i/60)"
-                    sleep 1
-                  done
-                """
-                sh 'sleep 3'
-                sh """
-                  mvn test \
-                    -Dspring.datasource.url=jdbc:postgresql://localhost:5432/monapp_test \
-                    -Dspring.datasource.driver-class-name=org.postgresql.Driver \
-                    -Dspring.datasource.username=postgres \
-                    -Dspring.datasource.password=postgres \
-                    -Dspring.jpa.hibernate.ddl-auto=create-drop
-                """
-            }
-            post {
-                always {
-                    sh "docker stop ${PG_CONTAINER} || true"
-                }
-            }
+       stage('Test') {
+    steps {
+        sh "docker stop ${PG_CONTAINER} || true"
+        sh "docker rm ${PG_CONTAINER} || true"
+        sh """
+          docker run --rm --name ${PG_CONTAINER} -d \
+            --network container:jenkins \
+            -e POSTGRES_USER=postgres \
+            -e POSTGRES_PASSWORD=postgres \
+            -e POSTGRES_DB=monapp_test \
+            postgres:16
+        """
+        sh """
+          for i in \$(seq 1 60); do
+            docker exec ${PG_CONTAINER} psql -U postgres -d monapp_test -c "SELECT 1" > /dev/null 2>&1 && break
+            sleep 1
+          done
+        """
+        sh 'sleep 3'
+        sh """
+          mvn test \
+            -Dspring.datasource.url=jdbc:postgresql://localhost:5432/monapp_test \
+            -Dspring.datasource.driver-class-name=org.postgresql.Driver \
+            -Dspring.datasource.username=postgres \
+            -Dspring.datasource.password=postgres \
+            -Dspring.jpa.hibernate.ddl-auto=create-drop
+        """
+    }
+    post {
+        always {
+            sh "docker stop ${PG_CONTAINER} || true"
         }
+    }
+}
 
         stage('Build Docker Image') {
             steps {
