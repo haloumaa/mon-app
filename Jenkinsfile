@@ -68,12 +68,12 @@ pipeline {
                 sh "docker push ${IMAGE_NAME}:latest"
             }
         }
-       stage('Deploy') {
+      stage('Deploy') {
     steps {
-        sshagent(credentials: ['prod-server-ssh']) {
-            sh """
-                ssh -o StrictHostKeyChecking=no debbabiahlem@host.docker.internal "docker network create prod-net || true && docker stop mon-app || true && docker rm -f mon-app || true && sleep 2 && docker run -d --name mon-app --network prod-net -p 8082:8080 ${IMAGE_NAME}:${BUILD_NUMBER}"
-            """
+        sshagent(['prod-server-ssh']) {
+            sh '''
+                ssh -o StrictHostKeyChecking=no debbabiahlem@host.docker.internal "docker network create prod-net || true && docker stop mon-app || true && docker rm -f mon-app || true && sleep 2 && docker run -d --name mon-app --network prod-net -p 8082:8080 debbabiahlem/mon-app:latest"
+            '''
         }
     
 }
