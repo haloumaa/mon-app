@@ -20,7 +20,7 @@ pipeline {
                 sh 'mvn clean compile'
             }
         }
-       stage('Test') {
+      stage('Test') {
     steps {
         sh "docker stop ${PG_CONTAINER} || true"
         sh "docker rm ${PG_CONTAINER} || true"
@@ -33,16 +33,17 @@ pipeline {
             postgres:16
         """
         sh """
-          for i in \$(seq 1 30); do
-            docker exec ${PG_CONTAINER} pg_isready -U postgres > /dev/null 2>&1 && break
+          for i in \$(seq 1 60); do
+            docker exec ${PG_CONTAINER} psql -U postgres -d monapp_test -c "SELECT 1" > /dev/null 2>&1 && break
+            echo "En attente de PostgreSQL... (\$i/60)"
             sleep 1
           done
         """
-        sh 'sleep 2'
+        sh 'sleep 3'
         sh """
           mvn test \
             -Dspring.datasource.url=jdbc:postgresql://localhost:5432/monapp_test \
-            -Dspring.datasource.driver-class-name=org.postgresql.Driver
+            -Dspring.datasource.driver-class-name=org.postgresql.Driver \
             -Dspring.datasource.username=postgres \
             -Dspring.datasource.password=postgres \
             -Dspring.jpa.hibernate.ddl-auto=create-drop
@@ -53,8 +54,7 @@ pipeline {
             sh "docker stop ${PG_CONTAINER} || true"
         }
     }
-
-        }
+}
         stage('Build Docker Image') {
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
