@@ -42,6 +42,7 @@ pipeline {
         sh """
           mvn test \
             -Dspring.datasource.url=jdbc:postgresql://localhost:5432/monapp_test \
+            -Dspring.datasource.driver-class-name=org.postgresql.Driver
             -Dspring.datasource.username=postgres \
             -Dspring.datasource.password=postgres \
             -Dspring.jpa.hibernate.ddl-auto=create-drop
